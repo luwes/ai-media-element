@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>&lt;ai-video&gt;</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+  <style>
+    ai-video {
+      display: block;
+      max-width: 800px;
+      aspect-ratio: 4 / 3;
+    }
+  </style>
+  <script type="module" src="./dist/ai-media-element.js"></script>
+</head>
+<body>
+  <h1>&lt;ai-video&gt;</h1>
+  <ai-video
+    playsinline
+    controls
+    slot="media"
+    crossorigin
+    src="./george-carlin-stuff.mp4"
+  ></ai-video>
+</body>
+</html>

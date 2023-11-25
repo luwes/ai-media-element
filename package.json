@@ -1,0 +1,25 @@
+{
+  "name": "ai-media-element",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "",
+  "main": "ai-media-element.js",
+  "author": "Wesley Luyten <me@wesleyluyten.com> (https://wesleyluyten.com)",
+  "license": "MIT",
+  "scripts": {
+    "test": "",
+    "dev": "npm run build -- --watch=forever & wet serve --cors",
+    "build": "esbuild src/*.js --bundle --outdir=dist --format=esm"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "esbuild": "^0.19.7",
+    "wet-run": "^0.7.0"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.9.0",
+    "custom-media-element": "^1.0.2",
+    "media-tracks": "^0.2.4",
+    "mp4box": "^0.5.2"
+  }
+}
