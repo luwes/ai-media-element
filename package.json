@@ -13,13 +13,12 @@
   },
   "keywords": [],
   "devDependencies": {
-    "esbuild": "^0.19.7",
-    "wet-run": "^0.7.0"
+    "esbuild": "^0.19.8",
+    "wet-run": "^0.7.1"
   },
   "dependencies": {
     "@xenova/transformers": "^2.9.0",
     "custom-media-element": "^1.0.2",
-    "media-tracks": "^0.2.4",
     "mp4box": "^0.5.2"
   }
 }

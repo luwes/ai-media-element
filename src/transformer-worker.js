@@ -118,7 +118,6 @@ const transcribe = async (
       force_full_sequences: false,
     });
 
-
     self.postMessage({
       status: 'update',
       task: 'automatic-speech-recognition',
@@ -150,16 +149,16 @@ const transcribe = async (
 
     // Merge text chunks
     // TODO optimise so we don't have to decode all chunks every time
-    let data = transcriber.tokenizer._decode_asr(chunks_to_process, {
-      time_precision: time_precision,
-      return_timestamps: true,
-      force_full_sequences: false,
-    });
+    // let data = transcriber.tokenizer._decode_asr(chunks_to_process, {
+    //   time_precision: time_precision,
+    //   return_timestamps: true,
+    //   force_full_sequences: false,
+    // });
 
     // self.postMessage({
     //   status: 'update',
     //   task: 'automatic-speech-recognition',
-    //   time,
+    //   offset,
     //   data,
     // });
   }

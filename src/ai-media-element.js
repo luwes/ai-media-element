@@ -1,5 +1,4 @@
 import { CustomVideoElement } from 'custom-media-element';
-// import { MediaTracksMixin } from 'media-tracks';
 import mp4box from 'mp4box';
 
 const worker = new Worker(new URL('./transformer-worker.js', import.meta.url), {
@@ -13,22 +12,8 @@ const DEFAULT_LANGUAGE = 'english';
 const DEFAULT_QUANTIZED = true;
 const DEFAULT_MULTILINGUAL = false;
 
-const template = document.createElement('template');
-template.innerHTML = /*html*/`
-  <style>
-    :host {
-      position: relative;
-    }
-  </style>
-`;
-
 class AiVideoElement extends CustomVideoElement {
   #isInit = false;
-
-  constructor() {
-    super();
-    this.shadowRoot.append(template.content.cloneNode(true));
-  }
 
   attributeChangedCallback(name, oldValue, newValue) {
     super.attributeChangedCallback(name, oldValue, newValue);
@@ -44,6 +29,9 @@ class AiVideoElement extends CustomVideoElement {
     if (this.#isInit) return;
     this.#isInit = true;
 
+    // Initialize automatic-speech-recognition pipeline
+    postAudio([]);
+
     let mp4boxfile = mp4box.createFile();
     let initSegment;
     let offset = 0;
@@ -55,7 +43,7 @@ class AiVideoElement extends CustomVideoElement {
     mp4boxfile.onReady = function(info) {
       console.log(info);
 
-      mp4boxfile.setSegmentOptions(info.audioTracks[0].id, null, { nbSamples: 150 });
+      mp4boxfile.setSegmentOptions(info.audioTracks[0].id, null, { nbSamples: 170 });
       initSegment = mp4boxfile.initializeSegmentation();
       console.log(initSegment);
       mp4boxfile.start();
@@ -83,9 +71,16 @@ class AiVideoElement extends CustomVideoElement {
     this.loadComplete = new PublicPromise();
 
     this.addEventListener('loadedmetadata', async () => {
+
       this.offlineCtx = new OfflineAudioContext(1, this.duration * SAMPLING_RATE, SAMPLING_RATE);
 
-      const response = await fetch(`${this.src}`);
+      // todo: instead of loading the entire file, we can incrementally load it
+      // based on the playhead position.
+      const response = await fetch(`${this.src}`, {
+        headers: {
+          // 'Range': 'bytes=0-600000', // 600kB
+        },
+      });
       const reader = response.body.getReader();
 
       let fileStart = 0;
@@ -107,88 +102,6 @@ class AiVideoElement extends CustomVideoElement {
         }
       }
     });
-
-    // const transcribedMedia = this.nativeEl.cloneNode();
-    // transcribedMedia.playbackRate = 2;
-    // transcribedMedia.controls = true;
-    // transcribedMedia.muted = false;
-    // Object.assign(transcribedMedia.style, {
-    //   // display: 'none', // comment out to see the video used for transcription
-    //   position: 'absolute',
-    //   width: '150px',
-    // });
-    // this.append(transcribedMedia);
-
-    // const audioContext = new AudioContext({ sampleRate: SAMPLING_RATE });
-    // const source = audioContext.createMediaElementSource(transcribedMedia);
-
-    // await audioContext.audioWorklet.addModule(new URL('./recorder-worklet.js', import.meta.url));
-
-    // const recorderNode = new AudioWorkletNode(audioContext, 'recorder-worklet');
-    // source
-    //   .connect(recorderNode)
-    //   .connect(audioContext.destination);
-
-    let recording = false;
-    let audioSegments = [];
-    postAudio(audioSegments);
-
-    // transcribedMedia.addEventListener('playing', () => {
-    //   recording = true;
-    // });
-
-    // transcribedMedia.addEventListener('pause', () => {
-    //   recording = false;
-    // });
-
-    // transcribedMedia.addEventListener('seeking', () => {
-    //   recording = false;
-    // });
-
-    // transcribedMedia.addEventListener('seeked', () => {
-    //   audioSegments = [];
-    //   offset = transcribedMedia.currentTime;
-    // });
-
-    this.addEventListener('play', async () => {
-      // await audioContext.resume();
-      // transcribedMedia.play();
-      console.log('play');
-      audioSegments = [];
-    });
-
-    this.addEventListener('pause', () => {
-      // transcribedMedia.pause();
-      console.log('pause');
-      // const audio = concatenateFloat32Arrays(audioSegments);
-      // postAudio(audio);
-      audioSegments = [];
-    });
-
-    this.addEventListener('seeking', () => {
-      // transcribedMedia.currentTime = this.currentTime;
-    });
-
-    // recorderNode.port.onmessage = (e) => {
-    //   if (recording) {
-    //     // todo: figure out a better way to create audio segments
-    //     // we build up longer segments because whisper improves
-    //     // the transcript based on neighboring audio.
-
-    //     // const lastCueText = [...this.track.cues].pop()?.text;
-    //     // console.log('endsWith', lastCueText?.endsWith('.'));
-
-    //     if (audioSegments.length > 5) {
-    //       offset += getAudioDuration(concatenateFloat32Arrays(audioSegments));
-    //       audioSegments = [];
-    //     }
-
-    //     audioSegments.push(e.data);
-    //     const audio = concatenateFloat32Arrays(audioSegments);
-    //     console.log(`transcribing a ${getAudioDuration(audio)}s audio segment`);
-    //     postAudio(audio, offset);
-    //   }
-    // };
   }
 
   handleEvent(event) {
