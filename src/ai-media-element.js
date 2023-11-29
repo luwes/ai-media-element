@@ -59,6 +59,8 @@ class AiVideoElement extends CustomVideoElement {
       const audioData = audioBuffer.getChannelData(0);
 
       await this.loadComplete;
+
+
       postAudio(audioData, offset);
       offset += audioBuffer.duration;
     };
@@ -74,33 +76,20 @@ class AiVideoElement extends CustomVideoElement {
 
       this.offlineCtx = new OfflineAudioContext(1, this.duration * SAMPLING_RATE, SAMPLING_RATE);
 
-      // todo: instead of loading the entire file, we can incrementally load it
-      // based on the playhead position.
-      const response = await fetch(`${this.src}`, {
-        headers: {
-          // 'Range': 'bytes=0-600000', // 600kB
-        },
-      });
-      const reader = response.body.getReader();
+      // todo: instead of loading the entire file,
+      // we could incrementally load it based on the playhead position.
 
       let fileStart = 0;
-
-      while (true) { // eslint-disable-line no-constant-condition
-        const { done, value } = await reader.read();
-
-        if (done) {
-          console.log('done');
-          return;
-        }
-
+      for await (const chunk of fetchMP4Chunks(this.src)) {
         try {
-          value.buffer.fileStart = fileStart;
-          mp4boxfile.appendBuffer(value.buffer);
-          fileStart += value.buffer.byteLength;
+          chunk.fileStart = fileStart;
+          mp4boxfile.appendBuffer(chunk);
+          fileStart += chunk.byteLength;
         } catch (err) {
           console.log(err);
         }
       }
+
     });
   }
 
@@ -148,8 +137,52 @@ class AiVideoElement extends CustomVideoElement {
         const cue = new VTTCue(startTime, endTime, chunk.text);
         this.track.addCue(cue);
       }
+
+      processComplete?.resolve();
     }
   }
+}
+
+let processComplete;
+
+async function* fetchMP4Chunks(url, chunkSize = 600_000) { // Default chunk size: 600kB
+    const fetchedFile = await fetch(url, {
+      method: 'HEAD'
+    });
+    const fileSize = fetchedFile.headers.get('content-length');
+    console.log(fileSize);
+
+    if (!fileSize) {
+      throw new Error("Couldn't retrieve file size.");
+    }
+
+    for (let start = 0; start < fileSize; start += chunkSize) {
+
+      if (processComplete) {
+        await processComplete;
+      }
+
+      processComplete = new PublicPromise();
+
+      const end = Math.min(start + chunkSize - 1, fileSize - 1);
+
+      const response = await fetch(url, {
+        headers: {
+          'Range': `bytes=${start}-${end}`
+        }
+      });
+
+      if (!response.ok && response.status !== 206) {
+        throw new Error(`Error fetching chunk: ${response.statusText}`);
+      }
+
+      const reader = response.body.getReader();
+
+      let done, value;
+      while (({ done, value } = await reader.read()) && !done) {
+        yield value.buffer;
+      }
+    }
 }
 
 function getAudioDuration(arrayBuffer, numChannels = 1, sampleRate = SAMPLING_RATE, isFloatingPoint = true) {

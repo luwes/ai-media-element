@@ -8,13 +8,13 @@
   "license": "MIT",
   "scripts": {
     "test": "",
-    "dev": "npm run build -- --watch=forever & wet serve --cors",
+    "dev": "npm run build -- --watch=forever & wet serve --cors --livereload",
     "build": "esbuild src/*.js --bundle --outdir=dist --format=esm"
   },
   "keywords": [],
   "devDependencies": {
     "esbuild": "^0.19.8",
-    "wet-run": "^0.7.1"
+    "wet-run": "^0.8.1"
   },
   "dependencies": {
     "@xenova/transformers": "^2.9.0",
